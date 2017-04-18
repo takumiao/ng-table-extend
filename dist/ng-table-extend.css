@@ -1,0 +1,56 @@
+.table-fixed-width {
+  table-layout: fixed
+}
+
+input[type=checkbox].table-checkbox {
+	margin: 0;
+}
+
+.table.table-no-border-around {
+	border: 0;
+}	
+.table.table-no-border-around > tbody > tr > td:first-child,
+.table.table-no-border-around > thead > tr > th:first-child {
+  border-left: 1px solid transparent;
+}
+
+.table.table-no-border-around > tbody > tr > td:last-child,
+.table.table-no-border-around > thead > tr > th:last-child  {
+	border-right: 1px solid transparent;
+}
+  
+.table.table-no-border-around > tbody > tr:last-child > td {
+	 border-bottom: 1px solid transparent;
+}
+
+.table.table-no-data {
+	height: 100%;
+}
+
+.table tr.table-empty-container,
+.table tr.table-empty-container:hover {
+	background: none !important;
+}
+
+.table tr.table-empty-container	> td > .table-empty-inner {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background-color: #fff;	
+}
+
+.table-with-pagination {
+	padding-bottom: 47px;
+	overflow: hidden;
+}
+
+.table-with-pagination .ng-table-pager {
+  padding: 6px 12px;
+  line-height: 34px;
+  border-top: 1px solid #ddd;
+}
+.table-with-pagination .ng-table-pager ul {
+  margin: 0;
+}
