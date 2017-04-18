@@ -67,8 +67,8 @@ Extension of `ng-table` directive
 var vm = this;
 var data = [{firstName: 'Alek', lastName: 'Mann', age: 50} /*,*/];
 vm.cols = [
-  { field: 'name', title: 'Name', show: true, width: 160 }, // add width attribute
-  { field: 'age', title: 'Age', show: true, width: 45 },
+  { field: 'name', title: 'Name', show: true, width: '160px' }, // add width attribute
+  { field: 'age', title: 'Age', show: true, width: '45px' },
   { field: 'address', title: 'Address', show: true }
 ];
 
