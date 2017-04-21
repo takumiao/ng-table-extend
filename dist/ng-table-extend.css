@@ -42,8 +42,9 @@ input[type=checkbox].table-checkbox {
 }
 
 .table-with-pagination {
+	height: 100%;
 	padding-bottom: 47px;
-	overflow: hidden;
+	overflow: hidden !important;
 }
 
 .table-with-pagination .ng-table-pager {

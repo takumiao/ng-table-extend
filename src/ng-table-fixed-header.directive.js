@@ -1,24 +1,35 @@
 // TODO: when resize can't find setting width
-var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeaderDefaults) {
+var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeaderDefaults, NgTableHelper) {
   return {
     restrict: 'A',
     priority: 1002,
     link: function(scope, elem, attrs) {
+      console.log(NgTableHelper);
       // get options of ng-table-fixed-header
       var options = $parse(attrs.tableFixedHeader)(scope);
       options = angular.extend({}, NgTableFixedHeaderDefaults, options);
 
       var tableId = elem.attr('id');
       var ngTableScope = elem.controller('ngTable').$scope;
-      timeout = $timeout(function() {
-        var fixedTable = elem.fixedHeaderTable(options);
-        var fixedWrapper = fixedTable.closest('.fht-table-wrapper');
-        var fixedThead = fixedWrapper.children('.fht-thead');
-        var fixedTbody = fixedWrapper.children('.fht-tbody');
+      $timeout(function() {
+        var fixedTable, fixedWrapper, fixedThead, fixedTbody;
+        init();
+        // add auto resize
+        angular.element($window).on('resize', NgTableHelper.debounce(function() {
+          fixedTable.fixedHeaderTable('destroy');
+          init();  
+        }, 250));
 
-        // clone thead & tfoot
-        cloneHeaderAndFooter();
-        tableId && fixedWrapper.attr('id', tableId + '-wrapper');
+        function init() {
+          fixedTable = elem.fixedHeaderTable(options);
+          fixedWrapper = fixedTable.closest('.fht-table-wrapper');
+          fixedThead = fixedWrapper.children('.fht-thead');
+          fixedTbody = fixedWrapper.children('.fht-tbody');
+
+          // clone thead & tfoot
+          cloneHeaderAndFooter();
+          tableId && fixedWrapper.attr('id', tableId + '-wrapper');
+        }
 
         function cloneHeaderAndFooter() {
           var thead = fixedThead.find('> table > thead'),    
@@ -43,11 +54,11 @@ var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeader
           // replace fixed thead with the compiled thead
           thead.replaceWith(clonedTheadOrg);
           
-          setTimeout(function() {
+          $timeout(function() {
             replacedThead = fixedThead.find('> table > thead');
             adjustReplacedTheadWidth(replacedThead, theadOrg);
             fixedLastThWidth(replacedThead);
-            fixedLastThWidth(theadOrg);    
+            fixedLastThWidth(theadOrg); 
           });
         }
 
@@ -71,5 +82,5 @@ var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeader
   };
 };
 
-directive.$inject = ['$parse', '$timeout', '$window', '$compile', 'NgTableFixedHeaderDefaults'];
+directive.$inject = ['$parse', '$timeout', '$window', '$compile', 'NgTableFixedHeaderDefaults', 'NgTableHelper'];
 module.exports = directive;

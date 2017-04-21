@@ -68,12 +68,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    .directive('ngTableNoData', __webpack_require__(3))
 	    .directive('ngTableColGroup', __webpack_require__(5))
 	    .directive('ngTableFixedHeader', __webpack_require__(6))
+	    .directive('ngTableSelectable', __webpack_require__(8))
+	    .factory('NgTableHelper', __webpack_require__(10))
 	    .value('NgTableNoDataDefaults', {
 	      text: 'no-data'
 	    })
 	    .value('NgTableFixedHeaderDefaults', {})
 	    .run(['$templateCache', function($templateCache) {
 	      $templateCache.put('ng-table/sorterRow.html', __webpack_require__(7));
+	      $templateCache.put('ng-table/checkAll.html', __webpack_require__(9));
 	    }]);
 
 /***/ },
@@ -97,12 +100,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    template: __webpack_require__(4),
 	    compile: function(elem, attrs) {
 	      elem.addClass('table-empty-container');
-	      var tableElem = elem.parent('table');
+	      var tableElem = angular.element(elem.parents('table')[0]);
 	      var tableEmpty = elem.find('.table-empty');
 	      return function postLink(scope) {
 	        scope.text || (scope.text = NgTableNoDataDefaults.text);
 	        scope.$watch('ngShow', function(newValue, oldValue) {
-	          if (newValue === oldValue) return;
 	          // when table fixed header we should adjust no-data display height
 	          var tableMarginTop = tableElem.css('marginTop');
 	          tableElem[newValue ? 'addClass' : 'removeClass']('table-no-data');
@@ -141,6 +143,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	      });
 	
+	      // remove <tr ng-table-col-group>
+	      elem.remove();
+	      
 	      return function postLink(scope, elem, attrs) {
 	        $timeout(function() {
 	          // add extra attributes to $column
@@ -151,8 +156,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            col.root = columnData[index].root || false;
 	            col.parentTitle = columnData[index].parentTitle;           
 	          });
-	          // remove <tr ng-table-col-group>
-	          elem.remove();
+	          
 	        });
 	      }
 	    }
@@ -167,26 +171,37 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	// TODO: when resize can't find setting width
-	var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeaderDefaults) {
+	var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeaderDefaults, NgTableHelper) {
 	  return {
 	    restrict: 'A',
 	    priority: 1002,
 	    link: function(scope, elem, attrs) {
+	      console.log(NgTableHelper);
 	      // get options of ng-table-fixed-header
 	      var options = $parse(attrs.tableFixedHeader)(scope);
 	      options = angular.extend({}, NgTableFixedHeaderDefaults, options);
 	
 	      var tableId = elem.attr('id');
 	      var ngTableScope = elem.controller('ngTable').$scope;
-	      timeout = $timeout(function() {
-	        var fixedTable = elem.fixedHeaderTable(options);
-	        var fixedWrapper = fixedTable.closest('.fht-table-wrapper');
-	        var fixedThead = fixedWrapper.children('.fht-thead');
-	        var fixedTbody = fixedWrapper.children('.fht-tbody');
+	      $timeout(function() {
+	        var fixedTable, fixedWrapper, fixedThead, fixedTbody;
+	        init();
+	        // add auto resize
+	        angular.element($window).on('resize', NgTableHelper.debounce(function() {
+	          fixedTable.fixedHeaderTable('destroy');
+	          init();  
+	        }, 250));
 	
-	        // clone thead & tfoot
-	        cloneHeaderAndFooter();
-	        tableId && fixedWrapper.attr('id', tableId + '-wrapper');
+	        function init() {
+	          fixedTable = elem.fixedHeaderTable(options);
+	          fixedWrapper = fixedTable.closest('.fht-table-wrapper');
+	          fixedThead = fixedWrapper.children('.fht-thead');
+	          fixedTbody = fixedWrapper.children('.fht-tbody');
+	
+	          // clone thead & tfoot
+	          cloneHeaderAndFooter();
+	          tableId && fixedWrapper.attr('id', tableId + '-wrapper');
+	        }
 	
 	        function cloneHeaderAndFooter() {
 	          var thead = fixedThead.find('> table > thead'),    
@@ -211,11 +226,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	          // replace fixed thead with the compiled thead
 	          thead.replaceWith(clonedTheadOrg);
 	          
-	          setTimeout(function() {
+	          $timeout(function() {
 	            replacedThead = fixedThead.find('> table > thead');
 	            adjustReplacedTheadWidth(replacedThead, theadOrg);
 	            fixedLastThWidth(replacedThead);
-	            fixedLastThWidth(theadOrg);    
+	            fixedLastThWidth(theadOrg); 
 	          });
 	        }
 	
@@ -239,7 +254,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 	};
 	
-	directive.$inject = ['$parse', '$timeout', '$window', '$compile', 'NgTableFixedHeaderDefaults'];
+	directive.$inject = ['$parse', '$timeout', '$window', '$compile', 'NgTableFixedHeaderDefaults', 'NgTableHelper'];
 	module.exports = directive;
 
 /***/ },
@@ -247,6 +262,162 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports) {
 
 	module.exports = "<tr class=\"ng-table-sort-header\">\r\n    <th title=\"{{$column.headerTitle(this)}}\"\r\n        ng-repeat=\"$column in $columns\"\r\n        ng-class=\"{\r\n                    'sortable': $column.sortable(this),\r\n                    'sort-asc': params.sorting()[$column.sortable(this)]=='asc',\r\n                    'sort-desc': params.sorting()[$column.sortable(this)]=='desc'\r\n                  }\"\r\n        ng-click=\"$ctrl.sortBy($column, $event)\"\r\n        ng-style=\"{width: $column.width}\"\r\n        ng-if=\"$column.show(this)\"\r\n        ng-init=\"template = $column.headerTemplateURL(this)\"\r\n        class=\"header {{$column.class(this)}}\">\r\n        <div ng-if=\"!template\" class=\"ng-table-header\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'div'}\">\r\n            <span ng-bind=\"$column.title(this)\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'span'}\"></span>\r\n        </div>\r\n        <div ng-if=\"template\" ng-include=\"template\"></div>\r\n    </th>\r\n</tr>";
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	var directive = function($compile, $parse, $timeout, ngTableEventsChannel) {
+	  return {
+	    restrict: 'A',
+	    require: 'ngModel',
+	    compile: function(elem, attrs) {
+	      var PROP_REGEXP = /\..*/;
+	      var checkbox = angular.element(elem[0].querySelector('[checklist-model]'));
+	      var match = checkbox.attr('checklist-value').match(PROP_REGEXP);
+	      var selectedAsProp = match ? match[0].replace(/^./, '') : false;
+	      return function postLink(scope, elem, attrs, ngModelCtrl) {
+	        // FIXME: access to ng-table's scope
+	        var table = angular.element(elem[0].querySelector('[ng-table]'));
+	        var ngTableScope = table.controller('ngTable').$scope;
+	        var tableFixedHeader = angular.isDefined(table.attr('ng-table-fixed-header'));
+	        scope.$selectedAll = {
+	          model: false // enum = {true, false, 'indeterminate'}
+	        };
+	
+	        scope.$selectAll = function() {
+	          ngTableScope.$data.forEach(function(row) {
+	            row = selectedAsProp ? row[selectedAsProp] : row;
+	            ngModelCtrl.$modelValue.indexOf(row) == -1 && ngModelCtrl.$modelValue.push(row);
+	          });
+	        };
+	
+	        scope.$unselectAll = function() {
+	          ngTableScope.$data.forEach(function(row) {
+	            row = selectedAsProp ? row[selectedAsProp] : row;
+	            var index = ngModelCtrl.$modelValue.indexOf(row);
+	            if (index > -1) {
+	              ngModelCtrl.$modelValue.splice(index, 1);
+	            }
+	          });
+	        };
+	
+	        scope.$watch('$selectedAll.model', function(newValue, oldValue) {
+	          if (newValue === oldValue || typeof newValue !== 'boolean') return;
+	          newValue ? scope.$selectAll() : scope.$unselectAll();
+	        });
+	
+	        scope.$watchCollection(function() {
+	          return ngModelCtrl.$modelValue
+	        }, selectAllChange);
+	
+	        ngTableEventsChannel.onPagesChanged(function() {
+	          selectAllChange();
+	        }, scope);
+	
+	        function selectAllChange(values) {
+	          if (ngTableScope.$data) {
+	            var total = ngTableScope.$data.length;
+	            var checked = 0;
+	
+	            ngTableScope.$data.forEach(function(row) {
+	              row = selectedAsProp ? row[selectedAsProp] : row
+	              ngModelCtrl.$modelValue.indexOf(row) > -1 && checked++;
+	            });
+	
+	            var unchecked = total - checked;
+	            // is table fixed header
+	            var selectAll = tableFixedHeader ?
+	              elem.closest('.fht-table-wrapper').find('.fht-thead .select-all') :
+	              elem.find('.select-all');
+	
+	            selectAll.prop('indeterminate', (checked !== 0 && unchecked !== 0));
+	
+	            if (checked == total && total != 0) {
+	              scope.$selectedAll.model = (checked <= ngModelCtrl.$modelValue.length) ? true : 'indeterminate';
+	              selectAll.prop('checked', true);
+	            } else if (checked == 0) {
+	              scope.$selectedAll.model = (ngModelCtrl.$modelValue.length == 0) ? false : 'indeterminate';
+	              selectAll.prop('checked', false);
+	            }
+	          }
+	        }
+	      }
+	    }
+	  }
+	};
+	
+	directive.$inject = ['$compile', '$parse', '$timeout', 'ngTableEventsChannel'];
+	module.exports = directive;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	module.exports = "<input type=\"checkbox\" class=\"select-all\" value=\"\" ng-model=\"$selectedAll.model\" />";
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	// @source jashkenas/underscore
+	// @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L693
+	var factory = function ($timeout) {
+	  return {
+	    debounce: debounce,
+	    throttle: throttle
+	  }
+	
+	  // @source jashkenas/underscore
+	  // @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L693
+	  function debounce (func, wait, immediate) {
+	    var timeout = null;
+	    return function () {
+	      var context = this;
+	      var args = arguments;
+	      var callNow = immediate && !timeout;
+	      if (timeout) {
+	        $timeout.cancel(timeout);
+	      }
+	      timeout = $timeout(function later () {
+	        timeout = null;
+	        if (!immediate) {
+	          func.apply(context, args);
+	        }
+	      }, wait, false);
+	      if (callNow) {
+	        func.apply(context, args);
+	      }
+	      return timeout;
+	    };
+	  };
+	
+	
+	  // @source jashkenas/underscore
+	  // @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L661
+	  function throttle (func, wait, options) {
+	    var timeout = null;
+	    if (!options) options = {};
+	    return function () {
+	      var context = this;
+	      var args = arguments;
+	      if (!timeout) {
+	        if (options.leading !== false) {
+	          func.apply(context, args);
+	        }
+	        timeout = $timeout(function later () {
+	          timeout = null;
+	          if (options.trailing !== false) {
+	            func.apply(context, args);
+	          }
+	        }, wait, false);
+	      }
+	    };
+	  };
+	};
+	
+	factory.$inject = ['$timeout'];
+	module.exports = factory;
 
 /***/ }
 /******/ ])

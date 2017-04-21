@@ -9,12 +9,11 @@ var directive = function(NgTableNoDataDefaults) {
     template: require('html!./templates/no-data.tpl.html'),
     compile: function(elem, attrs) {
       elem.addClass('table-empty-container');
-      var tableElem = elem.parent('table');
+      var tableElem = angular.element(elem.parents('table')[0]);
       var tableEmpty = elem.find('.table-empty');
       return function postLink(scope) {
         scope.text || (scope.text = NgTableNoDataDefaults.text);
         scope.$watch('ngShow', function(newValue, oldValue) {
-          if (newValue === oldValue) return;
           // when table fixed header we should adjust no-data display height
           var tableMarginTop = tableElem.css('marginTop');
           tableElem[newValue ? 'addClass' : 'removeClass']('table-no-data');

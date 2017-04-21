@@ -14,6 +14,9 @@ var directive = function($parse, $timeout) {
         });
       });
 
+      // remove <tr ng-table-col-group>
+      elem.remove();
+      
       return function postLink(scope, elem, attrs) {
         $timeout(function() {
           // add extra attributes to $column
@@ -24,8 +27,7 @@ var directive = function($parse, $timeout) {
             col.root = columnData[index].root || false;
             col.parentTitle = columnData[index].parentTitle;           
           });
-          // remove <tr ng-table-col-group>
-          elem.remove();
+          
         });
       }
     }
