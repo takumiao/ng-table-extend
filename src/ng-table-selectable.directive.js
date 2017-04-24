@@ -59,11 +59,10 @@ var directive = function($compile, $parse, $timeout, ngTableEventsChannel) {
             var unchecked = total - checked;
             // is table fixed header
             var selectAll = tableFixedHeader ?
-              elem.closest('.fht-table-wrapper').find('.fht-thead .select-all') :
+              elem.find('.fht-table-wrapper .fht-thead .select-all') :
               elem.find('.select-all');
 
             selectAll.prop('indeterminate', (checked !== 0 && unchecked !== 0));
-
             if (checked == total && total != 0) {
               scope.$selectedAll.model = (checked <= ngModelCtrl.$modelValue.length) ? true : 'indeterminate';
               selectAll.prop('checked', true);

@@ -3,10 +3,10 @@ ng-table-extend
 
 Extension of `ng-table` directive
 
-## Installation & Dependencies
+## Dependencies
 
 - angular (1.2+)
-- [ng-table (3.1.0+)](https://github.com/esvit/ng-table)
+- [ng-table (3.0.1+)](https://github.com/esvit/ng-table)
 
 ```html
 <!DOCTYPE html>
@@ -25,6 +25,7 @@ Extension of `ng-table` directive
 </html>
 ```
 
+<br/><br/>
 ## Fixed Width
 
 ### Example
@@ -82,6 +83,7 @@ vm.tableDynamicParams = new NgTableParams({}, {
 ```
 
 
+<br/><br/>
 ## No Data
 
 ### Example
@@ -103,9 +105,13 @@ vm.tableDynamicParams = new NgTableParams({}, {
 - `text` *(String='no-data')* - the text when table data is empty
 
 
+<br/><br/>
 ## Fixed Header
+
+### Dependencies
 - jquery (1.7+)
-- fixed-header-table
+- [fixed-header-table](https://github.com/markmalek/Fixed-Header-Table)
+
 
 ```html
 <!DOCTYPE html>
@@ -129,7 +135,7 @@ vm.tableDynamicParams = new NgTableParams({}, {
 
 ### Markup
 
-- need an extra `<td>` to adjust table\'s width
+- need an extra `<td>` to adjust table's width
 - add `ng-table-with-pagination` class to wrapper element if you hava pagination 
 
 ```html
@@ -152,6 +158,57 @@ vm.tableDynamicParams = new NgTableParams({}, {
     </tr>
   </table>
 </div>
+```
 
 
+<br/><br/>
+## Selectable
+
+### Dependencies
+- [checklist-model](https://github.com/vitalets/checklist-model)
+- [checklist-selection](https://gist.github.com/takumiao/3ed235b2b2486e5080ee679d39ce4ed2)
+
+
+### Example
+
+[http://jsfiddle.net/TakuMiao/yy4fz69h/](http://jsfiddle.net/TakuMiao/yy4fz69h/)
+
+### Markup
+
+- add `checklist-selection` and `ng-table-selectable` directive to wrapper element of table
+- add `ng-model` to store selected data
+- if you want a checkbox to select/unselect all, add `header="'ng-table/checkAll.html'"` attribute to a `<td>` in `ng-table-col-group` (you can also custom the template)
+
+```html
+<div checklist-selection
+  ng-table-selectable 
+  ng-model="vm.selectedUsers"
+  class="panel panel-default table-with-pagination">
+  <table ng-table="vm.tableParams"  
+    ng-table-fixed-header
+    class="table table-condensed table-bordered table-fixed-width table-no-border-around table-striped">
+    <tr ng-table-col-group>
+      <td data-width="40" header="'ng-table/checkAll.html'"></td>
+      <td data-title="'Name'" data-width="160"></td>
+      <td data-title="'Age'" data-sortable="'age'" data-width="60"></td>
+      <td data-title="'Address'"></td>
+    </tr>
+    <tr ng-repeat="row in $data"
+      style="cursor: pointer;"
+      ng-click="$toggleChecked(row)"
+      ng-class="{checked: $isChecked(row)}">
+      <td class="text-center">
+        <label>
+          <input type="checkbox"
+            checklist-model="$checklistModel"
+            checklist-value="row"
+            stop-propagation>
+        </label>
+      </td>
+      <td>{{::row.name}}</td>
+      <td>{{::row.age}}</td>
+      <td>{{::row.address}}</td>
+    </tr>
+  </table>
+</div>
 ```

@@ -68,15 +68,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    .directive('ngTableNoData', __webpack_require__(3))
 	    .directive('ngTableColGroup', __webpack_require__(5))
 	    .directive('ngTableFixedHeader', __webpack_require__(6))
-	    .directive('ngTableSelectable', __webpack_require__(8))
-	    .factory('NgTableHelper', __webpack_require__(10))
+	    .directive('ngTableSelectable', __webpack_require__(7))
+	    .factory('NgTableHelper', __webpack_require__(8))
 	    .value('NgTableNoDataDefaults', {
 	      text: 'no-data'
 	    })
 	    .value('NgTableFixedHeaderDefaults', {})
 	    .run(['$templateCache', function($templateCache) {
-	      $templateCache.put('ng-table/sorterRow.html', __webpack_require__(7));
-	      $templateCache.put('ng-table/checkAll.html', __webpack_require__(9));
+	      $templateCache.put('ng-table/sorterRow.html', __webpack_require__(9));
+	      $templateCache.put('ng-table/checkAll.html', __webpack_require__(10));
 	    }]);
 
 /***/ },
@@ -176,7 +176,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    restrict: 'A',
 	    priority: 1002,
 	    link: function(scope, elem, attrs) {
-	      console.log(NgTableHelper);
 	      // get options of ng-table-fixed-header
 	      var options = $parse(attrs.tableFixedHeader)(scope);
 	      options = angular.extend({}, NgTableFixedHeaderDefaults, options);
@@ -261,12 +260,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 7 */
 /***/ function(module, exports) {
 
-	module.exports = "<tr class=\"ng-table-sort-header\">\r\n    <th title=\"{{$column.headerTitle(this)}}\"\r\n        ng-repeat=\"$column in $columns\"\r\n        ng-class=\"{\r\n                    'sortable': $column.sortable(this),\r\n                    'sort-asc': params.sorting()[$column.sortable(this)]=='asc',\r\n                    'sort-desc': params.sorting()[$column.sortable(this)]=='desc'\r\n                  }\"\r\n        ng-click=\"$ctrl.sortBy($column, $event)\"\r\n        ng-style=\"{width: $column.width}\"\r\n        ng-if=\"$column.show(this)\"\r\n        ng-init=\"template = $column.headerTemplateURL(this)\"\r\n        class=\"header {{$column.class(this)}}\">\r\n        <div ng-if=\"!template\" class=\"ng-table-header\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'div'}\">\r\n            <span ng-bind=\"$column.title(this)\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'span'}\"></span>\r\n        </div>\r\n        <div ng-if=\"template\" ng-include=\"template\"></div>\r\n    </th>\r\n</tr>";
-
-/***/ },
-/* 8 */
-/***/ function(module, exports) {
-
 	var directive = function($compile, $parse, $timeout, ngTableEventsChannel) {
 	  return {
 	    restrict: 'A',
@@ -328,11 +321,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            var unchecked = total - checked;
 	            // is table fixed header
 	            var selectAll = tableFixedHeader ?
-	              elem.closest('.fht-table-wrapper').find('.fht-thead .select-all') :
+	              elem.find('.fht-table-wrapper .fht-thead .select-all') :
 	              elem.find('.select-all');
 	
 	            selectAll.prop('indeterminate', (checked !== 0 && unchecked !== 0));
-	
 	            if (checked == total && total != 0) {
 	              scope.$selectedAll.model = (checked <= ngModelCtrl.$modelValue.length) ? true : 'indeterminate';
 	              selectAll.prop('checked', true);
@@ -351,13 +343,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = directive;
 
 /***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	module.exports = "<input type=\"checkbox\" class=\"select-all\" value=\"\" ng-model=\"$selectedAll.model\" />";
-
-/***/ },
-/* 10 */
+/* 8 */
 /***/ function(module, exports) {
 
 	// @source jashkenas/underscore
@@ -418,6 +404,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	factory.$inject = ['$timeout'];
 	module.exports = factory;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	module.exports = "<tr class=\"ng-table-sort-header\">\r\n    <th title=\"{{$column.headerTitle(this)}}\"\r\n        ng-repeat=\"$column in $columns\"\r\n        ng-class=\"{\r\n                    'sortable': $column.sortable(this),\r\n                    'sort-asc': params.sorting()[$column.sortable(this)]=='asc',\r\n                    'sort-desc': params.sorting()[$column.sortable(this)]=='desc'\r\n                  }\"\r\n        ng-click=\"$ctrl.sortBy($column, $event)\"\r\n        ng-style=\"{width: $column.width}\"\r\n        ng-if=\"$column.show(this)\"\r\n        ng-init=\"template = $column.headerTemplateURL(this)\"\r\n        class=\"header {{$column.class(this)}}\">\r\n        <div ng-if=\"!template\" class=\"ng-table-header\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'div'}\">\r\n            <span ng-bind=\"$column.title(this)\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'span'}\"></span>\r\n        </div>\r\n        <div ng-if=\"template\" ng-include=\"template\"></div>\r\n    </th>\r\n</tr>";
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	module.exports = "<input type=\"checkbox\" class=\"select-all\" value=\"\" ng-model=\"$selectedAll.model\" />";
 
 /***/ }
 /******/ ])

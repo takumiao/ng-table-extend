@@ -4,7 +4,6 @@ var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeader
     restrict: 'A',
     priority: 1002,
     link: function(scope, elem, attrs) {
-      console.log(NgTableHelper);
       // get options of ng-table-fixed-header
       var options = $parse(attrs.tableFixedHeader)(scope);
       options = angular.extend({}, NgTableFixedHeaderDefaults, options);
