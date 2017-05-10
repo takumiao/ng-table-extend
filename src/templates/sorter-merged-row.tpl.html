@@ -1,0 +1,25 @@
+<tr class="ng-table-sort-header" 
+  ng-repeat="$columns in $mergedColumns track by $index" ng-init="level = $index">
+  <th ng-repeat="$column in $columns track by $index"
+    ng-attr-rowspan="{{(!$column.columns || $column.columns.length == 0) ? $mergedColumns.length - level : 0}}"
+    ng-attr-colspan="{{(!$column.columns || $column.columns.length == 0) ? 0 : $colspan($column.columns)}}"
+    ng-class="{
+                  'sortable': $column.sortable(this),
+                  'sort-asc': params.sorting()[$column.sortable(this)]=='asc',
+                  'sort-desc': params.sorting()[$column.sortable(this)]=='desc'
+              }"
+    ng-click="$ctrl.sortBy($column, $event)"
+    ng-if="$column.show(this)"
+    ng-init="template = $column.headerTemplateURL(this)"
+    class="header {{$column.class(this)}}"
+    cid="{{$column.$$hashKey}}">
+    
+
+    <div ng-if="!template" class="ng-table-header" ng-class="{'sort-indicator': params.settings().sortingIndicator == 'div'}">
+        <span ng-bind="$column.title(this)" ng-class="{'sort-indicator': params.settings().sortingIndicator == 'span'}"></span>
+    </div>
+    <div ng-if="template" ng-include="template"></div>
+
+
+  </th>   
+</tr>

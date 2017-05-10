@@ -2,6 +2,7 @@
 // @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L693
 var factory = function ($timeout) {
   return {
+    parentNgTable: parentNgTable,
     debounce: debounce,
     throttle: throttle
   }
@@ -30,7 +31,6 @@ var factory = function ($timeout) {
     };
   };
 
-
   // @source jashkenas/underscore
   // @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L661
   function throttle (func, wait, options) {
@@ -52,6 +52,23 @@ var factory = function ($timeout) {
       }
     };
   };
+
+  function parentNgTable (element) {
+    console.log(element);
+    if (element === null) {
+      return element;
+    } else {
+      var parentNode = element.parentNode;
+      if (parentNode && parentNode.tagName === 'TABLE' &&
+        parentNode.className.indexOf('ng-table')
+      ) {
+        return parentNode;
+      } else {
+        return parentNgTable(parentNode);
+      }
+    }
+  }
+
 };
 
 factory.$inject = ['$timeout'];

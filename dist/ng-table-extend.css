@@ -23,6 +23,16 @@ input[type=checkbox].table-checkbox {
 	 border-bottom: 1px solid transparent;
 }
 
+.table.table-merge-columns > thead > tr > td,
+.table.table-merge-columns > thead > tr > th {
+	vertical-align: middle;
+}
+
+.table-bordered > thead > tr > td, 
+.table-bordered > thead > tr> th {
+  border-bottom-width: 1px;
+}
+
 .table.table-no-data {
 	height: 100%;
 }
@@ -52,6 +62,16 @@ input[type=checkbox].table-checkbox {
   line-height: 34px;
   border-top: 1px solid #ddd;
 }
+
 .table-with-pagination .ng-table-pager ul {
   margin: 0;
+}
+
+
+table.fht-table {
+	margin-bottom: 0 !important;
+}
+
+.fht-table th {
+	font-weight: bold !important;
 }

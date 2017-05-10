@@ -1,5 +1,6 @@
 <tr class="ng-table-sort-header">
     <th title="{{$column.headerTitle(this)}}"
+        cid="{{$column.$$hashKey}}"
         ng-repeat="$column in $columns"
         ng-class="{
                     'sortable': $column.sortable(this),
@@ -7,7 +8,6 @@
                     'sort-desc': params.sorting()[$column.sortable(this)]=='desc'
                   }"
         ng-click="$ctrl.sortBy($column, $event)"
-        ng-style="{width: $column.width}"
         ng-if="$column.show(this)"
         ng-init="template = $column.headerTemplateURL(this)"
         class="header {{$column.class(this)}}">

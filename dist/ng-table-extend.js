@@ -65,18 +65,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports =
 	  angular
 	    .module('ngTable')
-	    .directive('ngTableNoData', __webpack_require__(3))
-	    .directive('ngTableColGroup', __webpack_require__(5))
-	    .directive('ngTableFixedHeader', __webpack_require__(6))
-	    .directive('ngTableSelectable', __webpack_require__(7))
-	    .factory('NgTableHelper', __webpack_require__(8))
+	    .directive('ngTableFixedWidth', __webpack_require__(3))
+	    .directive('ngTableNoData', __webpack_require__(4))
+	    .directive('ngTableColGroup', __webpack_require__(6))
+	    .directive('ngTableFixedHeader', __webpack_require__(7))
+	    .directive('ngTableSelectable', __webpack_require__(8))
+	    .directive('ngTableMergeColumns', __webpack_require__(9))   
+	    .factory('NgTableHelper', __webpack_require__(10))
 	    .value('NgTableNoDataDefaults', {
 	      text: 'no-data'
 	    })
+	    .config(__webpack_require__(11))
 	    .value('NgTableFixedHeaderDefaults', {})
 	    .run(['$templateCache', function($templateCache) {
-	      $templateCache.put('ng-table/sorterRow.html', __webpack_require__(9));
-	      $templateCache.put('ng-table/checkAll.html', __webpack_require__(10));
+	      $templateCache.put('ng-table/sorterRow.html', __webpack_require__(12));
+	      $templateCache.put('ng-table/checkAll.html', __webpack_require__(13));
+	      $templateCache.put('ng-table/sorterMergedRow.html', __webpack_require__(14));
 	    }]);
 
 /***/ },
@@ -87,9 +91,26 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	var directive = function(NgTableNoDataDefaults) {
+	  return {
+	    restrict: 'A',
+	    compile: function(elem, attrs) {
+	      var colGroup = '<colgroup><col ng-repeat="col in $columns" width="{{::col.width}}" cid="{{col.$$hashKey}}"></col></colgroup>';
+	      elem.addClass('table-fixed-width');
+	      elem.append(colGroup);
+	    }
+	  };
+	};
+	directive.$inject = ['NgTableNoDataDefaults']
+	module.exports = directive;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var directive = function(NgTableNoDataDefaults, NgTableHelper) {
 	  return {
 	    restrict: 'A',
 	    scope: {
@@ -97,10 +118,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      colspan: '=',
 	      ngShow: '='
 	    },
-	    template: __webpack_require__(4),
+	    template: __webpack_require__(5),
 	    compile: function(elem, attrs) {
 	      elem.addClass('table-empty-container');
-	      var tableElem = angular.element(elem.parents('table')[0]);
+	      var tableElem = angular.element(NgTableHelper.parentNgTable(elem[0]));
 	      var tableEmpty = elem.find('.table-empty');
 	      return function postLink(scope) {
 	        scope.text || (scope.text = NgTableNoDataDefaults.text);
@@ -114,17 +135,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  };
 	};
-	directive.$inject = ['NgTableNoDataDefaults']
+	directive.$inject = ['NgTableNoDataDefaults', 'NgTableHelper']
 	module.exports = directive;
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports) {
 
 	module.exports = "<td colspan=\"{{colspan}}\" style=\"position:relative;border: 0!important;\">\r\n  <div class=\"table-empty-inner\">\r\n    <div style=\"display:table;width:100%;height:100%;\">\r\n      <div style=\"display:table-cell;text-align: center; vertical-align: middle;\">\r\n        <span class=\"text-muted no-data\" style=\"font-size:140%;\">{{text}}</span>\r\n      </div>\r\n    </div>\r\n  </div>\r\n</td>";
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports) {
 
 	var directive = function($parse, $timeout) {
@@ -132,13 +153,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    restrict: 'A',
 	    compile: function(elem, attrs) {
 	      var columnData = [];
+	      var colGroup = '';
+	      
 	      // get extra attr from <td> element
 	      angular.forEach(elem.children('td'), function(td) {
 	        var td = angular.element(td);
 	        columnData.push({
 	          width: td.attr('data-width'),
 	          colspan: td.attr('data-colspan'),
-	          root: td.attr('data-root'),
+	          root: angular.isDefined(td.attr('data-root')),
 	          parentTitle: td.attr('data-parent-title')
 	        });
 	      });
@@ -156,7 +179,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            col.root = columnData[index].root || false;
 	            col.parentTitle = columnData[index].parentTitle;           
 	          });
-	          
 	        });
 	      }
 	    }
@@ -167,7 +189,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = directive;
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports) {
 
 	// TODO: when resize can't find setting width
@@ -205,16 +227,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	        function cloneHeaderAndFooter() {
 	          var thead = fixedThead.find('> table > thead'),    
 	              theadOrg = fixedTbody.find('> table > thead'),
+	              colGroup = fixedTbody.find('> table > colgroup'),
+	              cols = colGroup.children(),
 	              replacedThead = null,
 	              clonedTheadOrg = null;
 	
 	          // convert fluid width to fixed width 
-	          theadOrg.find('th.header').each(function(index) {
-	            var th = angular.element(this);
-	            var widthStyle = th[0].style.width;
-	            if (/%$/.test(widthStyle)) {
-	              th.css('width', th.outerWidth())
-	            }           
+	          colGroup.children().each(function(index) {
+	            var col = this;
+	            var widthStyle = col.getAttribute('width');
+	
+	            if (index == colGroup.children().length - 1) {
+	              // set last col 100%
+	              col.setAttribute('width', '100%');
+	            } else if (/%$/.test(widthStyle)) {
+	              var cid = col.getAttribute('cid');
+	              var th = theadOrg[0].querySelector('th[cid="'+cid+'"]')
+	              col.setAttribute('width', th.offsetWidth);
+	            }
 	          });
 	
 	          // clone original thead
@@ -224,12 +254,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	          $compile(clonedTheadOrg)(ngTableScope); 
 	          // replace fixed thead with the compiled thead
 	          thead.replaceWith(clonedTheadOrg);
-	          
+	          // fixed with user <colgroup>
+	          if (colGroup.length) {
+	            fixedThead.find('> table').append(colGroup.clone())
+	          }
+	
 	          $timeout(function() {
 	            replacedThead = fixedThead.find('> table > thead');
 	            adjustReplacedTheadWidth(replacedThead, theadOrg);
-	            fixedLastThWidth(replacedThead);
-	            fixedLastThWidth(theadOrg); 
+	            //fixedLastThWidth(replacedThead);
+	            //fixedLastThWidth(theadOrg); 
 	          });
 	        }
 	
@@ -257,7 +291,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = directive;
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports) {
 
 	var directive = function($compile, $parse, $timeout, ngTableEventsChannel) {
@@ -343,13 +377,130 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = directive;
 
 /***/ },
-/* 8 */
+/* 9 */
+/***/ function(module, exports) {
+
+	var directive = function($timeout, $compile) {
+		return {
+			restrict: 'A',
+			controller: function($element) {
+				var vm = this;
+				var ngTableDynamicController = $element.controller('ngTableDynamic');
+	
+				vm.treeifyColumns = treeifyColumns;
+				vm.mergeColumns = mergeColumns;
+				vm.flattenColumns = flattenColumns;
+				vm.buildDynamicColumns = buildDynamicColumns;
+				vm.colspan = colspan;
+	
+				function treeifyColumns(columns) {
+					var _columns = [];
+					var lookup = {};
+	
+					columns.forEach(function(col) {
+						lookup[col.title()] = col;
+						col.columns = [];
+					});
+	
+					columns.forEach(function(col) {
+						if (col.root == true) {
+							_columns.push(col);
+						} else {
+							parent = lookup[col.parentTitle];
+							parent && parent.columns.push(col);
+						}
+					});
+	
+					return _columns;
+				}
+	
+				function mergeColumns(columns) {
+					var _columns = [];
+					pushTheSameLevelCol(columns, 0);
+					return _columns;
+	
+					function pushTheSameLevelCol(columns, level) {
+						_columns[level] = _columns[level] || [];
+						columns.forEach(function(cell) {
+							_columns[level].push(cell);
+							if (cell.columns && cell.columns.length > 0) {
+								pushTheSameLevelCol(cell.columns, level + 1);
+							}
+						})
+					}
+				}
+	
+				function flattenColumns(nestedColumns) {
+					var _columns = [];
+					nestedColumns.forEach(function(col) {
+						if (col.columns && col.columns.length) {
+							Array.prototype.push.apply(_columns, flattenColumns(col.columns));
+						} else {
+							_columns.push(col);
+						}
+					});
+					return _columns;	
+				}
+	
+				function buildDynamicColumns(nestedColumns) {
+					nestedColumns.forEach(function(col) {
+						if (col.columns && col.columns.length) {
+							col.columns = ngTableDynamicController.buildColumns(col.columns);
+							buildDynamicColumns(col.columns);
+						}
+					});
+				}
+	
+				function colspan(columns) {
+					var n = 0;
+					columns.forEach(function(cell) {
+						if (cell.columns && cell.columns.length > 0) {
+							n += colspan(cell.columns); //遍历下级columns
+						} else {
+							++n;
+						}
+					});
+					return n;
+				}
+			},
+			compile: function(elem, attrs) {
+				elem.addClass('table-merge-columns');
+				return function postLink(scope, elem, attrs, ctrl) {
+					scope.$colspan = ctrl.colspan
+					scope.$mergedColumns = [];
+	
+					$timeout(function() {
+						if (attrs.ngTable) {
+							var columns = ctrl.treeifyColumns(scope.$columns);
+							scope.$mergedColumns = ctrl.mergeColumns(columns);
+							scope.$columns = ctrl.flattenColumns(columns);
+						} else if (attrs.ngTableDynamic) {
+							ctrl.buildDynamicColumns(scope.$columns);
+							scope.$mergedColumns = ctrl.mergeColumns(scope.$columns);
+							scope.$columns = ctrl.flattenColumns(scope.$columns);
+						}
+	
+						console.log(scope.$mergedColumns);
+						console.log(scope.$columns);
+					});
+				}
+			}
+		}
+	};
+	
+	directive.$inject = ['$timeout', '$compile'];
+	
+	module.exports = directive;
+
+/***/ },
+/* 10 */
 /***/ function(module, exports) {
 
 	// @source jashkenas/underscore
 	// @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L693
 	var factory = function ($timeout) {
 	  return {
+	    parentNgTable: parentNgTable,
 	    debounce: debounce,
 	    throttle: throttle
 	  }
@@ -378,7 +529,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	  };
 	
-	
 	  // @source jashkenas/underscore
 	  // @url https://github.com/jashkenas/underscore/blob/1.5.2/underscore.js#L661
 	  function throttle (func, wait, options) {
@@ -400,22 +550,67 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	    };
 	  };
+	
+	  function parentNgTable (element) {
+	    console.log(element);
+	    if (element === null) {
+	      return element;
+	    } else {
+	      var parentNode = element.parentNode;
+	      if (parentNode && parentNode.tagName === 'TABLE' &&
+	        parentNode.className.indexOf('ng-table')
+	      ) {
+	        return parentNode;
+	      } else {
+	        return parentNgTable(parentNode);
+	      }
+	    }
+	  }
+	
 	};
 	
 	factory.$inject = ['$timeout'];
 	module.exports = factory;
 
 /***/ },
-/* 9 */
+/* 11 */
 /***/ function(module, exports) {
 
-	module.exports = "<tr class=\"ng-table-sort-header\">\r\n    <th title=\"{{$column.headerTitle(this)}}\"\r\n        ng-repeat=\"$column in $columns\"\r\n        ng-class=\"{\r\n                    'sortable': $column.sortable(this),\r\n                    'sort-asc': params.sorting()[$column.sortable(this)]=='asc',\r\n                    'sort-desc': params.sorting()[$column.sortable(this)]=='desc'\r\n                  }\"\r\n        ng-click=\"$ctrl.sortBy($column, $event)\"\r\n        ng-style=\"{width: $column.width}\"\r\n        ng-if=\"$column.show(this)\"\r\n        ng-init=\"template = $column.headerTemplateURL(this)\"\r\n        class=\"header {{$column.class(this)}}\">\r\n        <div ng-if=\"!template\" class=\"ng-table-header\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'div'}\">\r\n            <span ng-bind=\"$column.title(this)\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'span'}\"></span>\r\n        </div>\r\n        <div ng-if=\"template\" ng-include=\"template\"></div>\r\n    </th>\r\n</tr>";
+	var decorator = function($provide) {
+		$provide.decorator('ngTableSorterRowDirective', ['$delegate', 'NgTableHelper', function($delegate, NgTableHelper){
+	  	var directive = $delegate[0];
+	  	directive.templateUrl = function(elem) {
+	  		// fixed-header will invoked again
+	  		var tableElem = angular.element(NgTableHelper.parentNgTable(elem[0]));
+	  		var mergeColumns = tableElem.hasClass('table-merge-columns');
+	      console.log('table', mergeColumns, tableElem);
+	  		var tmpl = mergeColumns ? 'ng-table/sorterMergedRow.html' : 'ng-table/sorterRow.html'
+	  		return tmpl;
+	  	}
+	  	return $delegate;
+	  }]);
+	};
+	
+	decorator.$inject = ['$provide'];
+	module.exports = decorator;
 
 /***/ },
-/* 10 */
+/* 12 */
+/***/ function(module, exports) {
+
+	module.exports = "<tr class=\"ng-table-sort-header\">\r\n    <th title=\"{{$column.headerTitle(this)}}\"\r\n        cid=\"{{$column.$$hashKey}}\"\r\n        ng-repeat=\"$column in $columns\"\r\n        ng-class=\"{\r\n                    'sortable': $column.sortable(this),\r\n                    'sort-asc': params.sorting()[$column.sortable(this)]=='asc',\r\n                    'sort-desc': params.sorting()[$column.sortable(this)]=='desc'\r\n                  }\"\r\n        ng-click=\"$ctrl.sortBy($column, $event)\"\r\n        ng-if=\"$column.show(this)\"\r\n        ng-init=\"template = $column.headerTemplateURL(this)\"\r\n        class=\"header {{$column.class(this)}}\">\r\n        <div ng-if=\"!template\" class=\"ng-table-header\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'div'}\">\r\n            <span ng-bind=\"$column.title(this)\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'span'}\"></span>\r\n        </div>\r\n        <div ng-if=\"template\" ng-include=\"template\"></div>\r\n    </th>\r\n</tr>";
+
+/***/ },
+/* 13 */
 /***/ function(module, exports) {
 
 	module.exports = "<input type=\"checkbox\" class=\"select-all\" value=\"\" ng-model=\"$selectedAll.model\" />";
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	module.exports = "<tr class=\"ng-table-sort-header\" \r\n  ng-repeat=\"$columns in $mergedColumns track by $index\" ng-init=\"level = $index\">\r\n  <th ng-repeat=\"$column in $columns track by $index\"\r\n    ng-attr-rowspan=\"{{(!$column.columns || $column.columns.length == 0) ? $mergedColumns.length - level : 0}}\"\r\n    ng-attr-colspan=\"{{(!$column.columns || $column.columns.length == 0) ? 0 : $colspan($column.columns)}}\"\r\n    ng-class=\"{\r\n                  'sortable': $column.sortable(this),\r\n                  'sort-asc': params.sorting()[$column.sortable(this)]=='asc',\r\n                  'sort-desc': params.sorting()[$column.sortable(this)]=='desc'\r\n              }\"\r\n    ng-click=\"$ctrl.sortBy($column, $event)\"\r\n    ng-if=\"$column.show(this)\"\r\n    ng-init=\"template = $column.headerTemplateURL(this)\"\r\n    class=\"header {{$column.class(this)}}\"\r\n    cid=\"{{$column.$$hashKey}}\">\r\n    \r\n\r\n    <div ng-if=\"!template\" class=\"ng-table-header\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'div'}\">\r\n        <span ng-bind=\"$column.title(this)\" ng-class=\"{'sort-indicator': params.settings().sortingIndicator == 'span'}\"></span>\r\n    </div>\r\n    <div ng-if=\"template\" ng-include=\"template\"></div>\r\n\r\n\r\n  </th>   \r\n</tr>";
 
 /***/ }
 /******/ ])

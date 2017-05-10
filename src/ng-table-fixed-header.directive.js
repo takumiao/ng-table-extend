@@ -33,16 +33,24 @@ var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeader
         function cloneHeaderAndFooter() {
           var thead = fixedThead.find('> table > thead'),    
               theadOrg = fixedTbody.find('> table > thead'),
+              colGroup = fixedTbody.find('> table > colgroup'),
+              cols = colGroup.children(),
               replacedThead = null,
               clonedTheadOrg = null;
 
           // convert fluid width to fixed width 
-          theadOrg.find('th.header').each(function(index) {
-            var th = angular.element(this);
-            var widthStyle = th[0].style.width;
-            if (/%$/.test(widthStyle)) {
-              th.css('width', th.outerWidth())
-            }           
+          colGroup.children().each(function(index) {
+            var col = this;
+            var widthStyle = col.getAttribute('width');
+
+            if (index == colGroup.children().length - 1) {
+              // set last col 100%
+              col.setAttribute('width', '100%');
+            } else if (/%$/.test(widthStyle)) {
+              var cid = col.getAttribute('cid');
+              var th = theadOrg[0].querySelector('th[cid="'+cid+'"]')
+              col.setAttribute('width', th.offsetWidth);
+            }
           });
 
           // clone original thead
@@ -52,12 +60,16 @@ var directive = function($parse, $timeout, $window, $compile, NgTableFixedHeader
           $compile(clonedTheadOrg)(ngTableScope); 
           // replace fixed thead with the compiled thead
           thead.replaceWith(clonedTheadOrg);
-          
+          // fixed with user <colgroup>
+          if (colGroup.length) {
+            fixedThead.find('> table').append(colGroup.clone())
+          }
+
           $timeout(function() {
             replacedThead = fixedThead.find('> table > thead');
             adjustReplacedTheadWidth(replacedThead, theadOrg);
-            fixedLastThWidth(replacedThead);
-            fixedLastThWidth(theadOrg); 
+            //fixedLastThWidth(replacedThead);
+            //fixedLastThWidth(theadOrg); 
           });
         }
 

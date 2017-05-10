@@ -1,4 +1,4 @@
-var directive = function(NgTableNoDataDefaults) {
+var directive = function(NgTableNoDataDefaults, NgTableHelper) {
   return {
     restrict: 'A',
     scope: {
@@ -9,7 +9,7 @@ var directive = function(NgTableNoDataDefaults) {
     template: require('html!./templates/no-data.tpl.html'),
     compile: function(elem, attrs) {
       elem.addClass('table-empty-container');
-      var tableElem = angular.element(elem.parents('table')[0]);
+      var tableElem = angular.element(NgTableHelper.parentNgTable(elem[0]));
       var tableEmpty = elem.find('.table-empty');
       return function postLink(scope) {
         scope.text || (scope.text = NgTableNoDataDefaults.text);
@@ -23,5 +23,5 @@ var directive = function(NgTableNoDataDefaults) {
     }
   };
 };
-directive.$inject = ['NgTableNoDataDefaults']
+directive.$inject = ['NgTableNoDataDefaults', 'NgTableHelper']
 module.exports = directive;
